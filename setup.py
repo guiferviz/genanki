@@ -4,7 +4,7 @@ version = {}
 with open('genanki/version.py') as fp:
   exec(fp.read(), version)
 
-setup(name='genanki',
+setup(name='genanki_mnemocards',
       version=version['__version__'],
       description='Generate Anki decks programmatically',
       url='http://github.com/kerrickstaley/genanki',
