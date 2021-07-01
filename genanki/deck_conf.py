@@ -66,4 +66,3 @@ class DeckConf:
     confs = json.loads(conf_json_str)
     confs.update({str(self.deck_conf_id): self.to_json()})
     cursor.execute('UPDATE col SET dconf = ?', (json.dumps(confs),))
-

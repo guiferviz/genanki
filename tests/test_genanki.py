@@ -427,3 +427,89 @@ class TestWithCollection:
 
         anki_note = self.col.getNote(self.col.findNotes('')[0])
         assert anki_note.model()['sortf'] == CUSTOM_SORT_FIELD_INDEX
+
+  def test_notes_with_due1(self):
+    deck = genanki.Deck(4145273926, 'foodeck')
+    deck.add_note(genanki.Note(
+      TEST_MODEL,
+      ['Capital of Washington', 'Olympia'],
+      due=1))
+    deck.add_note(genanki.Note(
+      TEST_MODEL,
+      ['Capital of Oregon', 'Salem'],
+      due=2))
+
+    self.import_package(genanki.Package(deck))
+
+    self.col.decks.select(self.col.decks.id('foodeck'))
+    self.col.sched.reset()
+    next_card = self.col.sched.getCard()
+    next_note = self.col.getNote(next_card.nid)
+
+    # Next card is the one with lowest due value.
+    assert next_note.fields == ['Capital of Washington', 'Olympia']
+
+  def test_notes_with_due2(self):
+    # Same as test_notes_with_due1, but we switch the due values
+    # for the two notes.
+    deck = genanki.Deck(4145273927, 'foodeck')
+    deck.add_note(genanki.Note(
+      TEST_MODEL,
+      ['Capital of Washington', 'Olympia'],
+      due=2))
+    deck.add_note(genanki.Note(
+      TEST_MODEL,
+      ['Capital of Oregon', 'Salem'],
+      due=1))
+
+    self.import_package(genanki.Package(deck))
+
+    self.col.decks.select(self.col.decks.id('foodeck'))
+    self.col.sched.reset()
+    next_card = self.col.sched.getCard()
+    next_note = self.col.getNote(next_card.nid)
+
+    # Next card changes to "Capital of Oregon", because it has lower
+    # due value.
+    assert next_note.fields == ['Capital of Oregon', 'Salem']
+
+  def test_deck_with_config(self):
+    conf = genanki.DeckConf(666, 'MyConf')
+    # Changing default initialFactor from 2500 to 4500
+    conf.conf['new']['initialFactor'] = 4500
+    deck = genanki.Deck(112233, 'foodeck', conf=conf)
+    # The Anki importer need at least one card to import the config.
+    # See related discussion:
+    # https://anki.tenderapp.com/discussions/ankidesktop/38114-importing-apkg-does-not-update-deck-config-fields
+    note = genanki.Note(TEST_MODEL, ['a', 'b'])
+    deck.add_note(note)
+
+    self.import_package(genanki.Package(deck))
+
+    all_confs = self.col.decks.allConf()
+    assert len(all_confs) == 2  # default conf and MyConf
+    imported_deck = all_confs[1]
+
+    assert imported_deck['new']['initialFactor'] == 4500
+
+  def test_deck_with_2_config(self):
+    conf = genanki.DeckConf(666, 'MyConf')
+    conf.conf['new']['initialFactor'] = 4500
+    deck = genanki.Deck(112233, 'foodeck', conf=conf)
+    note = genanki.Note(TEST_MODEL, ['a', 'b'])
+    deck.add_note(note)
+
+    self.import_package(genanki.Package(deck))
+    conf = genanki.DeckConf(6666, 'MyConf2')
+    conf.conf['new']['initialFactor'] = 5500
+    deck = genanki.Deck(11223344, 'boodeck', conf=conf)
+    note = genanki.Note(TEST_MODEL, ['a', 'b'])
+    deck.add_note(note)
+
+    self.import_package(genanki.Package(deck))
+
+    all_confs = self.col.decks.allConf()
+    assert len(all_confs) == 2  # default conf and MyConf
+    imported_deck = all_confs[1]
+
+    assert imported_deck['new']['initialFactor'] == 4500
