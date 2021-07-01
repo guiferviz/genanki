@@ -58,7 +58,7 @@ class Deck:
     cursor.execute('UPDATE col SET decks = ?', (json.dumps(decks),))
 
     if self.conf is not None:
-      self.conf.write_to_db(cursor, timestamp)
+      self.conf.write_to_db(cursor, now_ts)
 
     models_json_str, = cursor.execute('SELECT models from col').fetchone()
     models = json.loads(models_json_str)
